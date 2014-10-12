@@ -19,7 +19,7 @@ module.exports.getSlidesTree = function(html){
   var slidesTree = {};
   slidesTree.allSubsteps={};
 
-  var $ = require('cheerio').load(html);
+  var $=require('cheerio').load(html);
 
   //generate steps array
   slidesTree.steps = $('.step').map(function(idx, el){
@@ -34,7 +34,7 @@ module.exports.getSlidesTree = function(html){
     elSubs.active = -1;
 
     return  $el.attr('id');
-  });
+  }).toArray();
 
   return slidesTree;
 }
