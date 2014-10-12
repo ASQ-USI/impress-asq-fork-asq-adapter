@@ -5,4 +5,4 @@ require('bows').config({ padLength: 18 })
 
 //fun starts here
 var asqSocket = require('./browser/asqSocketMock');
-var adapter = require('./browser/impressAsqAdapter')(asqSocket);
+var adapter = require('./browser').adapter(asqSocket);

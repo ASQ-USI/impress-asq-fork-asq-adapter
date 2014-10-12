@@ -3,7 +3,7 @@
   "version": "0.0.1-pre",
   "description": "This adapter adds support to ASQ for presentations using the ASQ fork of impress.js",
   "main": "impressAsqAdapter.js",
-  "browser": "browser/impressAsqAdapter.js",
+  "browser": "browser/index.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/ASQ-USI/impress-asq-fork-asq-adapter.git"
@@ -24,6 +24,7 @@
     "webpack": "^1.4.4"
   },
   "dependencies": {
-    "bows": "^1.1.2"
+    "bows": "^1.1.2",
+    "cheerio": "^0.17.0"
   }
 }
