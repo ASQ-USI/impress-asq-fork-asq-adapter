@@ -24,6 +24,7 @@ module.exports.getSlidesTree = function(html){
   //generate steps array
   slidesTree.steps = $('.step').map(function(idx, el){
     var $el = $(el);
+    //this is the same nomenclature impress is using for ids
     if ( "undefined" == typeof  $el.attr('id') ||  $el.attr('id').trim() == '' ) {
        $el.attr('id' ,"step-" + (idx + 1));
     }
