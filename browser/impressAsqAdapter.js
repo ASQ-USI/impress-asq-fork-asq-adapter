@@ -80,9 +80,12 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     // patch impress.js when it's ready
     patchImpress();
   }else{
-     goto(getElementFromHash() || steps[0], null, 0);
+    var firstStep = getStep(getElementFromHash()) || steps[0];
+    goto(firstStep, null, 0);
   }
 
+  // react to goto events from sockets
+  asqSocket.onGoto(onAsqSocketGoto);
 
   // `patchImpress` patches the impress.js api so that external scripts
   // that use goto, next and prev go through the adapter.
@@ -96,7 +99,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
     document.removeEventListener("impress:ready", patchImpress);
 
-    debug("impress patched")
+    debug("impress patched");
     var impressOrig = impress;
 
     window.impress = function(rootId){
@@ -125,7 +128,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     goto(getElementFromHash() || steps[0], null, 0);
   }
 
-  asqSocket.onGoto(function(data){
+  function onAsqSocketGoto(data){
     if("undefined" === typeof data || data === null){
       debug("data is undefined or null");
       return;
@@ -149,7 +152,11 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       if(! impressPatched) { patchImpress() };
         var impressActiveStep = impress().gotoOrig(activeStep, allSubsteps[activeStep].active, data.duration);
     }
-  });
+
+    var event = document.createEvent("CustomEvent");
+    event.initCustomEvent("impress-adapter:onGoto", true, true, data);
+    document.dispatchEvent(event);
+  };
 
 
   function getSubSteps(el) {
@@ -287,13 +294,11 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     return window.location.hash.replace(/^#\/?/,"");
   };
 
-  if(root){
-    root.addEventListener("impress:stepenter", function (event) {
-      window.location.hash = lastHash = "#/" + event.target.id;
-    }, false);
+  function onStepEnter(event) {
+    window.location.hash = lastHash = "#/" + event.target.id;
   }
-  
-  window.addEventListener("hashchange", function () {
+
+  function onHashChange() {
     // When the step is entered hash in the location is updated
     // (just few lines above from here), so the hash change is 
     // triggered and we would call `goto` again on the same element.
@@ -302,106 +307,140 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     if (window.location.hash !== lastHash) {
       goto( getElementFromHash() );
     }
-  }, false);
+  }
+
+  function onKeyDown(){
+    if(event.target == document.body){
+       if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
+        event.preventDefault();
+      }
+    }
+  }
+
+  function onKeyUp(){
+    if(event.target == document.body){
+      if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
+
+        event.preventDefault();
+
+        switch( event.keyCode ) {
+          case 33: // pg up
+          case 37: // left
+          case 38: // up
+          prev();
+          break;
+          case 9:  // tab
+          case 32: // space
+          case 34: // pg down
+          case 39: // right
+          case 40: // down
+          next();
+          break;
+        }
+      }
+    }
+  }
+
+  function onClickLink ( event ) {
+    // event delegation with "bubbling"
+    // check if event target (or any of its parents is a link)
+    var target = event.target;
+    while ( (target.tagName !== "A") &&
+      (target !== document.documentElement) ) {
+      target = target.parentNode;
+    } 
+
+    if ( target.tagName === "A" ) {
+      var href = target.getAttribute("href");
+
+      // if it's a link to presentation step, target this step
+      if ( href && href[0] === '#' ) {
+        target = href.slice(1);
+      }
+    }
+
+    if (typeof target == "string" && goto(target) ) {
+      event.preventDefault();
+    }
+  }
+
+  function onClickStep( event ) {
+    var target = event.target;
+      // find closest step element that is not active
+      while ( !(target.classList.contains("step") && !target.classList.contains("active")) &&
+        (target !== document.documentElement) ) {
+        target = target.parentNode;
+    }
+    target = target.id;
+    if ( goto(target) ) {
+      event.preventDefault();
+    }
+  }
+
+  function onTouchStart( event ) {
+    if (event.touches.length === 1) {
+      var x = event.touches[0].clientX,
+      width = window.innerWidth * 0.3,
+      result = null;
+
+      if ( x < width ) {
+        result = prev();
+      } else if ( x > window.innerWidth - width ) {
+        result = next();
+      }
+
+      if (result) {
+        event.preventDefault();
+      }
+    }
+  }
+
+  function destroy(){
+    if(root){
+      root.removeEventListener("impress:stepenter", onStepEnter);
+    }
+    
+    window.removeEventListener("hashchange", onHashChange);
+
+    if(standalone){
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keyup', onKeyUp);
+      document.removeEventListener("click", onClickLink);
+      document.removeEventListener("click", onClickStep);
+      document.removeEventListener("touchstart", onTouchStart);
+    }
+
+    asqSocket.offGoto(onAsqSocketGoto);
+  }
+
+  if(root){
+    root.addEventListener("impress:stepenter", onStepEnter, false);
+  }
+  
+  window.addEventListener("hashchange", onHashChange, false);
 
 
   if(standalone){
-    document.addEventListener('keydown', function(){
-      if(event.target == document.body){
-         if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
-          event.preventDefault();
-        }
-      }
-    })
-
-    document.addEventListener('keyup', function(){
-      if(event.target == document.body){
-        if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
-
-          event.preventDefault();
-
-          switch( event.keyCode ) {
-            case 33: // pg up
-            case 37: // left
-            case 38: // up
-            prev();
-            break;
-            case 9:  // tab
-            case 32: // space
-            case 34: // pg down
-            case 39: // right
-            case 40: // down
-            next();
-            break;
-          }
-        }
-      }
-    },false);
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keyup', onKeyUp, false);
 
     // delegated handler for clicking on the links to presentation steps
     // in contrast to impress.js this uses id only (for goto)
-    document.addEventListener("click", function ( event ) {
-      // event delegation with "bubbling"
-      // check if event target (or any of its parents is a link)
-      var target = event.target;
-      while ( (target.tagName !== "A") &&
-        (target !== document.documentElement) ) {
-        target = target.parentNode;
-      } 
-
-      if ( target.tagName === "A" ) {
-        var href = target.getAttribute("href");
-
-        // if it's a link to presentation step, target this step
-        if ( href && href[0] === '#' ) {
-          target = href.slice(1);
-        }
-      }
-
-      if (typeof target == "string" && goto(target) ) {
-        event.preventDefault();
-      }
-    }, false);
+    document.addEventListener("click", onClickLink, false);
 
     // delegated handler for clicking on step elements
     // in contrast to impress.js this uses id only (for goto)
-    document.addEventListener("click", function ( event ) {
-      var target = event.target;
-        // find closest step element that is not active
-        while ( !(target.classList.contains("step") && !target.classList.contains("active")) &&
-          (target !== document.documentElement) ) {
-          target = target.parentNode;
-      }
-      target = target.id;
-      if ( goto(target) ) {
-        event.preventDefault();
-      }
-    }, false);
+    document.addEventListener("click", onClickStep, false);
 
     // touch handler to detect taps on the left and right side of the screen
     // based on awesome work of @hakimel: https://github.com/hakimel/reveal.js
-    document.addEventListener("touchstart", function ( event ) {
-      if (event.touches.length === 1) {
-        var x = event.touches[0].clientX,
-        width = window.innerWidth * 0.3,
-        result = null;
-
-        if ( x < width ) {
-          result = prev();
-        } else if ( x > window.innerWidth - width ) {
-          result = next();
-        }
-
-        if (result) {
-          event.preventDefault();
-        }
-      }
-    }, false);
+    document.addEventListener("touchstart", onTouchStart, false);
   }
 
   return {
     prev: prev,
     next: next,
-    goto: goto
+    goto: goto,
+    destroy: destroy
   }
 }

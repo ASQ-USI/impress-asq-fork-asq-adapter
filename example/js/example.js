@@ -45,10 +45,10 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	// this is the entry for the ./example/js/impressAsqImpressAdapterExample.js script
-	
+
 	//congig logger
 	__webpack_require__(3).config({ padLength: 18 })
-	
+
 	//fun starts here
 	var asqSocket = __webpack_require__(1);
 	var adapter = __webpack_require__(2).adapter(asqSocket);
@@ -70,28 +70,28 @@
 	*  source:  http://github.com/ASQ-USI/asq-impress-adapter/
 	*
 	*/
-	
-	
+
+
 	/**
 	* @param {Object} asqSocket an interface object to the real asq socket.
 	*/
 	'use strict';
-	
+
 	var debug = __webpack_require__(3)("asqSocketMock")
 	var onGotoCb = null;
-	
+
 	module.exports.onGoto = function(cb){
 	  if("function" !== typeof cb){
 	    throw new Error("cb should be a function")
 	  }
 	  onGotoCb = cb;
 	}
-	
+
 	module.exports.emitGoto = function(data){
 	 debug("Emitting goto data:", data);
 	  receiveData(data);
 	}
-	
+
 	var receiveData = function(data){
 	 debug("Received goto data:", data);
 	  
@@ -120,7 +120,7 @@
 	    var chrome = !!window.chrome,
 	        firefox = /firefox/i.test(navigator.userAgent),
 	        firefoxVersion;
-	
+
 	    if (firefox) {
 	        var match = navigator.userAgent.match(/Firefox\/(\d+\.\d+)/);
 	        if (match && match[1] && Number(match[1])) {
@@ -129,14 +129,14 @@
 	    }
 	    return chrome || firefoxVersion >= 31.0;
 	  }
-	
+
 	  var yieldColor = function() {
 	    var goldenRatio = 0.618033988749895;
 	    hue += goldenRatio;
 	    hue = hue % 1;
 	    return hue * 360;
 	  };
-	
+
 	  var inNode = typeof window === 'undefined',
 	      ls = !inNode && window.localStorage,
 	      debugKey = ls.andlogKey || 'debug',
@@ -150,25 +150,25 @@
 	      bows = null,
 	      debugRegex = null,
 	      moduleColorsMap = {};
-	
+
 	  debugRegex = debug && debug[0]==='/' && new RegExp(debug.substring(1,debug.length-1));
-	
+
 	  var logLevels = ['log', 'debug', 'warn', 'error', 'info'];
-	
+
 	  //Noop should noop
 	  for (var i = 0, ii = logLevels.length; i < ii; i++) {
 	      noop[ logLevels[i] ] = noop;
 	  }
-	
+
 	  bows = function(str) {
 	    var msg, colorString, logfn;
 	    msg = (str.slice(0, padLength));
 	    msg += Array(padLength + 3 - msg.length).join(' ') + '|';
-	
+
 	    if (debugRegex && !str.match(debugRegex)) return noop;
-	
+
 	    if (!bind) return noop;
-	
+
 	    if (colorsSupported) {
 	      if(!moduleColorsMap[str]){
 	        moduleColorsMap[str]= yieldColor();
@@ -176,9 +176,9 @@
 	      var color = moduleColorsMap[str];
 	      msg = "%c" + msg;
 	      colorString = "color: hsl(" + (color) + ",99%,40%); font-weight: bold";
-	
+
 	      logfn = bind.call(logger.log, logger, msg, colorString);
-	
+
 	      logLevels.forEach(function (f) {
 	        logfn[f] = bind.call(logger[f] || logfn, logger, msg, colorString);
 	      });
@@ -188,16 +188,16 @@
 	        logfn[f] = bind.call(logger[f] || logfn, logger, msg);
 	      });
 	    }
-	
+
 	    return logfn;
 	  };
-	
+
 	  bows.config = function(config) {
 	    if (config.padLength) {
 	      padLength = config.padLength;
 	    }
 	  };
-	
+
 	  if (true) {
 	    module.exports = bows;
 	  } else {
@@ -237,13 +237,13 @@
 	* as possible.
 	*
 	*/
-	
-	
+
+
 	/**
 	* @param {Object} asqSocket an interface object to the real asq socket.
 	*/
 	'use strict';
-	
+
 	var debug = __webpack_require__(3)("asqImpressAdapter")
 	/**
 	* @constuctor
@@ -264,13 +264,13 @@
 	  var lastHash = "";
 	  var steps =null;
 	  var allSubsteps = null;
-	
+
 	  if(slidesTree){
 	    steps = slidesTree.steps
 	    allSubsteps = slidesTree.allSubsteps;
 	  }else{
 	    allSubsteps = Object.create(null);
-	
+
 	    //generate steps array
 	    var domsteps = slidesTree || document.querySelectorAll('.step');
 	    steps = [].slice.call(domsteps).map(function(el, idx){
@@ -283,11 +283,11 @@
 	      var elSubs = allSubsteps[el.id] = Object.create(null);
 	      elSubs.substeps = getSubSteps(el);
 	      elSubs.active = -1;
-	
+
 	      return el.id;
 	    });
 	  }
-	
+
 	  if(! standalone){
 	    // patch impress.js when it's ready
 	    patchImpress();
@@ -295,10 +295,10 @@
 	    var firstStep = getStep(getElementFromHash()) || steps[0];
 	    goto(firstStep, null, 0);
 	  }
-	
+
 	  // react to goto events from sockets
 	  asqSocket.onGoto(onAsqSocketGoto);
-	
+
 	  // `patchImpress` patches the impress.js api so that external scripts
 	  // that use goto, next and prev go through the adapter.
 	  function patchImpress(){
@@ -308,20 +308,20 @@
 	      document.addEventListener("impress:ready", patchImpress);
 	      return;
 	    }
-	
+
 	    document.removeEventListener("impress:ready", patchImpress);
-	
+
 	    debug("impress patched");
 	    var impressOrig = impress;
-	
+
 	    window.impress = function(rootId){
 	      rootId = rootId || "impress";
-	
+
 	      // if given root is already patched just return the API
 	      if (roots["impress-root-" + rootId]) {
 	        return roots["impress-root-" + rootId];
 	      }
-	
+
 	      var api = impressOrig(rootId);
 	      api.prevOrig = api.prev;
 	      api.nextOrig = api.next;
@@ -329,28 +329,28 @@
 	      api.prev = prev;
 	      api.next = next;
 	      api.goto = goto;
-	
+
 	      return  roots["impress-root-" + rootId] = api;
 	    }
-	
+
 	    impressPatched = true;
-	
+
 	    // START after patch had taken place
 	    // by selecting step defined in url or first step of the presentation
 	    goto(getElementFromHash() || steps[0], null, 0);
 	  }
-	
+
 	  function onAsqSocketGoto(data){
 	    if("undefined" === typeof data || data === null){
 	      debug("data is undefined or null");
 	      return;
 	    }
-	
+
 	    activeStep = data.step || activeStep;
 	    allSubsteps[activeStep].active = (!isNaN(data.substepIdx))
 	      ? data.substepIdx 
 	      : -1;
-	
+
 	    var times = offset
 	    while (times-- >0 ){
 	      var nextState = getNext();
@@ -359,18 +359,18 @@
 	        ? nextState.substepIdx 
 	        : -1;
 	    }
-	
+
 	    if(typeof impress === 'function'){
 	      if(! impressPatched) { patchImpress() };
 	        var impressActiveStep = impress().gotoOrig(activeStep, allSubsteps[activeStep].active, data.duration);
 	    }
-	
+
 	    var event = document.createEvent("CustomEvent");
 	    event.initCustomEvent("impress-adapter:onGoto", true, true, data);
 	    document.dispatchEvent(event);
 	  };
-	
-	
+
+
 	  function getSubSteps(el) {
 	    var steps = el.querySelectorAll(".substep"),
 	    order = [], unordered = [];
@@ -395,7 +395,7 @@
 	    });
 	    return order.filter(Boolean).concat(unordered);
 	  };
-	
+
 	  // `getStep` is a helper function that returns a step element defined by parameter.
 	  // Contrary to the actual impress.js implementation this one returns and id
 	  // If a number is given, if of step with index given by the number is returned, 
@@ -411,7 +411,7 @@
 	    }
 	    return step ? step : null;
 	  };
-	
+
 	  // `goto` function that moves to step given with `el` parameter (ONLY id),
 	  // moves to substep given with subIdx (by index),
 	  // with a transition `duration` optionally given as second parameter.
@@ -425,23 +425,23 @@
 	          return null;
 	      }
 	    }
-	
+
 	    //these two should be valid
 	    activeStep = id || activeStep;
 	    allSubsteps[activeStep].active = (!isNaN(subIdx))
 	      ? subIdx 
 	      : -1;
-	
+
 	    debug("goto #"+ activeStep + ":" + allSubsteps[activeStep].active);
 	    asqSocket.emitGoto({step: activeStep, substepIdx: allSubsteps[activeStep].active, duration: duration})
 	    return activeStep;
 	  }
-	
+
 	  function prev() {
 	    var subactive, substeps;
 	    
 	    substeps = allSubsteps[activeStep].substeps || [];
-	
+
 	    //if we have substeps deal with them first
 	    if (substeps.length && ((subactive = allSubsteps[activeStep].active) || (subactive === 0))) {
 	      if (subactive >=0) {
@@ -449,20 +449,20 @@
 	        return goto(null, subactive)
 	      }
 	    }
-	
+
 	    //no substeps or we are at the first substep. Go to the previous step
 	    var prev = steps.indexOf( activeStep ) - 1;
 	    prev = prev >= 0 ? steps[ prev ] : steps[ steps.length-1 ];
-	
+
 	    var prevSubsteps = allSubsteps[prev].substeps || [];
 	    return goto(prev, (prevSubsteps.length -1));
 	  };
-	
+
 	  function next () {
 	    var subactive, substeps;
 	    
 	    substeps = allSubsteps[activeStep].substeps || [];
-	
+
 	    // if we have substeps deal with them first
 	    if (substeps.length && ((subactive = allSubsteps[activeStep].active) !== (substeps.length - 1))) {
 	      if(isNaN(subactive) || (subactive==null)){
@@ -470,19 +470,19 @@
 	      }
 	      return goto(null, ++subactive);
 	    }
-	
+
 	    // no substeps or substeps are over. Go to the next step
 	    var next = steps.indexOf( activeStep ) + 1;
 	    next = next < steps.length ? steps[ next ] : steps[ 0 ];
-	
+
 	    return goto(next, -1);
 	  };
-	
+
 	  function getNext(){
 	    var subactive, substeps;
 	    
 	    substeps = allSubsteps[activeStep].substeps || [];
-	
+
 	    // if we have substeps deal with them first
 	    if (substeps.length && ((subactive = allSubsteps[activeStep].active) !== (substeps.length - 1))) {
 	      if(isNaN(subactive) || (subactive==null)){
@@ -490,14 +490,14 @@
 	      }
 	      return { step: null, substepIdx: ++subactive};
 	    }
-	
+
 	    // no substeps or substeps are over. Go to the next step
 	    var next = steps.indexOf( activeStep ) + 1;
 	    next = next < steps.length ? steps[ next ] : steps[ 0 ];
-	
+
 	    return { step: next, substepIdx: -1};
 	  }
-	
+
 	  // `getElementFromHash` returns an element located by id from hash part of
 	  // window location.
 	  function getElementFromHash() {
@@ -505,11 +505,11 @@
 	    // so both "fallback" `#slide-id` and "enhanced" `#/slide-id` will work
 	    return window.location.hash.replace(/^#\/?/,"");
 	  };
-	
+
 	  function onStepEnter(event) {
 	    window.location.hash = lastHash = "#/" + event.target.id;
 	  }
-	
+
 	  function onHashChange() {
 	    // When the step is entered hash in the location is updated
 	    // (just few lines above from here), so the hash change is 
@@ -520,7 +520,7 @@
 	      goto( getElementFromHash() );
 	    }
 	  }
-	
+
 	  function onKeyDown(){
 	    if(event.target == document.body){
 	       if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
@@ -528,13 +528,13 @@
 	      }
 	    }
 	  }
-	
+
 	  function onKeyUp(){
 	    if(event.target == document.body){
 	      if ( event.keyCode === 9 || ( event.keyCode >= 32 && event.keyCode <= 34 ) || (event.keyCode >= 37 && event.keyCode <= 40) ) {
-	
+
 	        event.preventDefault();
-	
+
 	        switch( event.keyCode ) {
 	          case 33: // pg up
 	          case 37: // left
@@ -552,7 +552,7 @@
 	      }
 	    }
 	  }
-	
+
 	  function onClickLink ( event ) {
 	    // event delegation with "bubbling"
 	    // check if event target (or any of its parents is a link)
@@ -561,21 +561,21 @@
 	      (target !== document.documentElement) ) {
 	      target = target.parentNode;
 	    } 
-	
+
 	    if ( target.tagName === "A" ) {
 	      var href = target.getAttribute("href");
-	
+
 	      // if it's a link to presentation step, target this step
 	      if ( href && href[0] === '#' ) {
 	        target = href.slice(1);
 	      }
 	    }
-	
+
 	    if (typeof target == "string" && goto(target) ) {
 	      event.preventDefault();
 	    }
 	  }
-	
+
 	  function onClickStep( event ) {
 	    var target = event.target;
 	      // find closest step element that is not active
@@ -588,32 +588,32 @@
 	      event.preventDefault();
 	    }
 	  }
-	
+
 	  function onTouchStart( event ) {
 	    if (event.touches.length === 1) {
 	      var x = event.touches[0].clientX,
 	      width = window.innerWidth * 0.3,
 	      result = null;
-	
+
 	      if ( x < width ) {
 	        result = prev();
 	      } else if ( x > window.innerWidth - width ) {
 	        result = next();
 	      }
-	
+
 	      if (result) {
 	        event.preventDefault();
 	      }
 	    }
 	  }
-	
+
 	  function destroy(){
 	    if(root){
 	      root.removeEventListener("impress:stepenter", onStepEnter);
 	    }
 	    
 	    window.removeEventListener("hashchange", onHashChange);
-	
+
 	    if(standalone){
 	      document.removeEventListener('keydown', onKeyDown)
 	      document.removeEventListener('keyup', onKeyUp);
@@ -621,34 +621,34 @@
 	      document.removeEventListener("click", onClickStep);
 	      document.removeEventListener("touchstart", onTouchStart);
 	    }
-	
+
 	    asqSocket.offGoto(onAsqSocketGoto);
 	  }
-	
+
 	  if(root){
 	    root.addEventListener("impress:stepenter", onStepEnter, false);
 	  }
 	  
 	  window.addEventListener("hashchange", onHashChange, false);
-	
-	
+
+
 	  if(standalone){
 	    document.addEventListener('keydown', onKeyDown)
 	    document.addEventListener('keyup', onKeyUp, false);
-	
+
 	    // delegated handler for clicking on the links to presentation steps
 	    // in contrast to impress.js this uses id only (for goto)
 	    document.addEventListener("click", onClickLink, false);
-	
+
 	    // delegated handler for clicking on step elements
 	    // in contrast to impress.js this uses id only (for goto)
 	    document.addEventListener("click", onClickStep, false);
-	
+
 	    // touch handler to detect taps on the left and right side of the screen
 	    // based on awesome work of @hakimel: https://github.com/hakimel/reveal.js
 	    document.addEventListener("touchstart", onTouchStart, false);
 	  }
-	
+
 	  return {
 	    prev: prev,
 	    next: next,
@@ -667,31 +667,31 @@
 	  var impressEl = null
 	    , options = opts
 	    , $thumbs = $([]);
-	
-	
+
+
 	  var resizeConf = {
 	    width: "360",
 	    height: "240"
 	  }
-	
+
 	  // sels for thumbs and containers
 	  sels = {
 	    thumbContainerClass  : "thumb",
 	    slideThumbClass : "thumb-step"
 	  };
-	
+
 	  /** @function _validateAndSetOptions
 	  *   @description: validates external options and, if valid, overrides defaults
 	  */
 	  function _validateAndSetOptions(options){
 	    if(!options){return;}
-	
+
 	    if(options.impressEl){
 	      impressEl = options.impressEl
 	    }else{
 	      impressEl = document;
 	    }
-	
+
 	    if(options.resize){
 	      if("undefined" === typeof options.resize.width && "undefined" === typeof options.resize.width){
 	        debug("options.resize object needs at least one of the following properties: width, height");
@@ -703,7 +703,7 @@
 	        resizeConf = options.resize
 	      }
 	    }
-	
+
 	    if(options.sels){
 	      for (var key in sels){
 	        if( options.sels[key]){
@@ -717,7 +717,7 @@
 	      }
 	    }
 	  }
-	
+
 	  /** @function createThumb
 	  *   @description: creates a clone of the original element,
 	  *   appends '-clone' to the original id and removes any
@@ -726,28 +726,28 @@
 	  *   step and sets the transform-origin css property.
 	  */
 	  function createThumb($slide){
-	
+
 	    var slide_classes = $slide[0].classList;
 	    var saved_slide_classes = [];
-	
+
 	    for (var i = 0; i< slide_classes.length; i++) {
 	      var c = slide_classes[i];
 	      if (c.match("(^future|^past|^present|^active)")) {
 	        saved_slide_classes.push(c);
 	      }
 	    }
-	
+
 	    //remove classes
 	    saved_slide_classes.forEach(function(saved_slide_class){
 	      $slide.removeClass(saved_slide_class)
 	    });
 	    // make every slide look like its the current one
 	    $slide.addClass("active present")
-	
-	
+
+
 	    var $clone = $slide.clone()
 	    , cloneId = $clone.attr("id")
-	
+
 	    , styles = {
 	        "-webkit-touch-callout" : "",
 	        "-webkit-user-select" : "",
@@ -758,7 +758,7 @@
 	        "pointer-events" : "none",
 	        "opacity": "1"
 	    };
-	
+
 	    $clone
 	      //change id only if not empty
 	      .attr("id", (cloneId === undefined || cloneId == '') ? '' : cloneId + "-clone")
@@ -771,7 +771,7 @@
 	    
 	    //set transform orign property
 	    $clone[0].style["-webkit-transform-origin"] = "0 0";
-	
+
 	    var $cloneChildren = $clone.find('*');
 	    //copy original computed style for children
 	    $slide.find('*').each(function(index){
@@ -784,16 +784,16 @@
 	        //add custom styles
 	        .css(styles);
 	    });
-	
+
 	    //revert style to original slide
 	    //$slide.removeClass("active present")
 	    saved_slide_classes.forEach(function(saved_slide_class){
 	     // $slide.addClass(saved_slide_class)
 	    });   
-	
+
 	    return $clone;
 	  }
-	
+
 	  /** @function resizeThumb
 	  *   @description: resizes a thumbs to fit specified width and height (in pixels) or both
 	  */
@@ -813,7 +813,7 @@
 	 
 	    var scaleFactor= 1.0
 	      , fixedWrapper = false;
-	
+
 	    //need to fit to the exact size
 	    if("undefined" !== typeof strategy.width 
 	      && "undefined" !== typeof strategy.height)
@@ -823,13 +823,13 @@
 	        , thumbContentHeight = parseInt(strategy.height)
 	        , contentRatio = thumbContentWidth / thumbContentHeight
 	        , thumbRatio = $thumb.outerWidth() / $thumb.outerHeight();
-	
+
 	      //thumb wrapper has defined dimensions from the strategy
 	      $thumb.parent().css({
 	        "width"  : thumbContentWidth + "px",
 	        "height" : thumbContentHeight + "px" 
 	      });
-	
+
 	      // fit on width
 	      if (contentRatio > thumbRatio){
 	        delete strategy.height
@@ -838,7 +838,7 @@
 	        delete strategy.width
 	      }
 	    }
-	
+
 	    //resize based on width
 	    if("undefined" !== typeof strategy.width 
 	      && "undefined" === typeof strategy.height)
@@ -850,20 +850,20 @@
 	      var thumbContentHeight = parseInt(strategy.height);
 	      scaleFactor =  thumbContentHeight / $thumb.outerHeight();
 	    }
-	
+
 	    $thumb[0].style["-webkit-transform"] = "scale("+scaleFactor+")";
 	    $thumb[0].style["transform"] = "scale("+scaleFactor+")";
 	    
-	
+
 	    if(fixedWrapper){
 	      $thumb.parent().css({
 	        "position" : "relative",
 	        "overflow" : "hidden"
 	      })
-	
+
 	      var left = ($thumb.parent().innerWidth() - ($thumb.outerWidth()* scaleFactor ))/ 2 + "px";
 	      var right = ($thumb.parent().innerHeight() - ($thumb.outerHeight()* scaleFactor))/ 2 + "px";
-	
+
 	      $thumb.css({
 	        "position" : "absolute",
 	        "left" : left,
@@ -880,11 +880,11 @@
 	        "right" : "0px"
 	      })
 	    }
-	
-	
-	
+
+
+
 	  }
-	
+
 	  /** @function _css
 	  *   @description: Gets the computed styles of an element and returns
 	  *   key value pair of rules (compatible with jQuery)
@@ -893,7 +893,7 @@
 	      var rules = window.getComputedStyle(a.get(0));
 	      return _css2json(rules);
 	  }
-	
+
 	  /** @function _css2json
 	  *   @description: Converts CSSStyleDeclaration objects or css rules
 	  *   in string format to key value pairs (compatible with jQuery)
@@ -918,7 +918,7 @@
 	      }
 	      return s;
 	  }
-	
+
 	  // Public API
 	  return {
 	    createThumb : createThumb,
@@ -936,12 +936,12 @@
 	    var inNode = typeof window === 'undefined',
 	        ls = !inNode && window.localStorage,
 	        out = {};
-	
+
 	    if (inNode) {
 	        module.exports = console;
 	        return;
 	    }
-	
+
 	    var andlogKey = ls.andlogKey || 'debug'
 	    if (ls && ls[andlogKey] && window.console) {
 	        out = window.console;
@@ -949,7 +949,7 @@
 	        var methods = "assert,count,debug,dir,dirxml,error,exception,group,groupCollapsed,groupEnd,info,log,markTimeline,profile,profileEnd,time,timeEnd,trace,warn".split(","),
 	            l = methods.length,
 	            fn = function () {};
-	
+
 	        while (l--) {
 	            out[methods[l]] = fn;
 	        }
@@ -964,4 +964,3 @@
 
 /***/ }
 /******/ ])
-//# sourceMappingURL=impressAsqAdapterExample.js.map
