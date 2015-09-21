@@ -214,6 +214,11 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       }
     }
 
+    //this may be a resize
+    if(activeStep == id && !subIdx){
+      return impress().gotoOrig(activeStep)
+    }
+
     //these two should be valid
     activeStep = id || activeStep;
     allSubsteps[activeStep].active = (!isNaN(subIdx))
