@@ -382,24 +382,6 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     }
   }
 
-  function onTouchStart( event ) {
-    if (event.touches.length === 1) {
-      var x = event.touches[0].clientX,
-      width = window.innerWidth * 0.3,
-      result = null;
-
-      if ( x < width ) {
-        result = prev();
-      } else if ( x > window.innerWidth - width ) {
-        result = next();
-      }
-
-      if (result) {
-        event.preventDefault();
-      }
-    }
-  }
-
   function destroy(){
     if(root){
       root.removeEventListener("impress:stepenter", onStepEnter);
@@ -412,7 +394,6 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       document.removeEventListener('keyup', onKeyUp);
       document.removeEventListener("click", onClickLink);
       document.removeEventListener("click", onClickStep);
-      document.removeEventListener("touchstart", onTouchStart);
     }
 
     asqSocket.offGoto(onAsqSocketGoto);
@@ -436,10 +417,6 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     // delegated handler for clicking on step elements
     // in contrast to impress.js this uses id only (for goto)
     document.addEventListener("click", onClickStep, false);
-
-    // touch handler to detect taps on the left and right side of the screen
-    // based on awesome work of @hakimel: https://github.com/hakimel/reveal.js
-    document.addEventListener("touchstart", onTouchStart, false);
   }
 
   return {
