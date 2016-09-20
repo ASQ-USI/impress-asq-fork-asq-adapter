@@ -28,6 +28,8 @@
   "dependencies": {
     "bows": "^1.1.2",
     "cheerio": "^0.17.0",
-    "grunt-urequire": "^0.7.3"
+    "grunt-urequire": "^0.7.3",
+    "urequire": "^0.7.0-beta.29",
+    "urequire-ab-grunt-contrib-watch": "0.0.2"
   }
 }
