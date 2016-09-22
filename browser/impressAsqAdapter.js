@@ -40,7 +40,7 @@ var debug = require('bows')("asqImpressAdapter")
 * @param {boolean} standalone if present, the adapter will not patch impress
 * @param {number} offset The number of 'next' events the presentation is ahead compared to the received events. Used in presenter control for the preview
 */
-var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standalone, offset ){
+var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standalone, offset, initStep ){
   standalone = standalone || false;
   offset = offset || 0;
   // var names follow impress
@@ -80,7 +80,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     // patch impress.js when it's ready
     patchImpress();
   }else{
-    var firstStep = getStep(getElementFromHash()) || steps[0];
+    var firstStep = getStep(getElementFromHash()) || getStep(initStep) || steps[0];
     goto(firstStep, null, 0);
   }
 

@@ -466,7 +466,7 @@ define('impressAsqAdapter',['require', 'exports', 'module', 'bows'], function (r
 
 "use strict";
 var debug = require("bows")("asqImpressAdapter");
-var asqImpressAdapter = module.exports = function (asqSocket, slidesTree, standalone, offset) {
+var asqImpressAdapter = module.exports = function (asqSocket, slidesTree, standalone, offset, initStep) {
   standalone = standalone || false;
   offset = offset || 0;
   var roots = [];
@@ -495,7 +495,7 @@ var asqImpressAdapter = module.exports = function (asqSocket, slidesTree, standa
   if (!standalone) {
     patchImpress();
   } else {
-    var firstStep = getStep(getElementFromHash()) || steps[0];
+    var firstStep = getStep(getElementFromHash()) || getStep(initStep) || steps[0];
     goto(firstStep, null, 0);
   }
   asqSocket.onGoto(onAsqSocketGoto);
