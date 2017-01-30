@@ -5,6 +5,13 @@ module.exports.getSlideFromGotoData = function(data){
   return null;
 }
 
+module.exports.getFragmentFromGotoData = function(data){
+  if("undefined" !== typeof data && "undefined" !== typeof data.substepIdx){
+    return data.substepIdx
+  }
+  return null;
+}
+
 // The structure of an impress presentation comprises a list of `.step` elements
 // We represent this list as an Array of strings where each string is the HTML 
 // id of the corresponding slide. For example slidesTree = ['slide-1', 'slide-2']
