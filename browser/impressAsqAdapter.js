@@ -186,8 +186,8 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     newSlide.dataset.x = 21000;
     newSlide.dataset.y = 0;
     newSlide.dataset.z = 1000;
-    newStep(newSlide);
-    steps.push(newSlide.id);
+    newStep(newSlide, data.index);
+    steps.splice(data.index, 0, newSlide.id);
     var elSubs = allSubsteps[data.id] = Object.create(null);
     elSubs.substeps = [];
     elSubs.active = -1;
