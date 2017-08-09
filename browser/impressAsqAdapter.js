@@ -13,10 +13,10 @@
 * Based on code from  Bartek Szopka (@bartaz) http://github.com/bartaz/
 *
 * Impress doesn't allow a lot of control over it's internals. The way this script works
-* is by overriding the 'goto', `next` and `prev` API functions with its own so that it 
+* is by overriding the 'goto', `next` and `prev` API functions with its own so that it
 * can transmit the events by sockets
-* The keyboard and click event listeners in impress use the API version of the aforementioned 
-* functions so they end up using the patched versions. 
+* The keyboard and click event listeners in impress use the API version of the aforementioned
+* functions so they end up using the patched versions.
 *
 * This implementation is based on a representation of steps as an Array of ids. It DOESN'T
 * support DOM elements like impress.js to be more lightweight.
@@ -40,13 +40,13 @@ var debug = require('bows')("asqImpressAdapter")
 * @param {boolean} standalone if present, the adapter will not patch impress
 * @param {number} offset The number of 'next' events the presentation is ahead compared to the received events. Used in presenter control for the preview
 */
-var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standalone, offset, initStep ){
+var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standalone, offset, newStep ){
   standalone = standalone || false;
   offset = offset || 0;
   // var names follow impress
   // similarly to impress.js we cache a patched impress API
   var roots=[];
-  var impressPatched = false;  
+  var impressPatched = false;
   var root = document.getElementById('impress');
   var activeStep = null;
   var lastHash = "";
@@ -66,7 +66,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       if ( !el.id ) {
         el.id = "step-" + (idx + 1);
       }
-      
+
       //generate substeps Object
       var elSubs = allSubsteps[el.id] = Object.create(null);
       elSubs.substeps = getSubSteps(el);
@@ -87,11 +87,14 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
   // react to goto events from sockets
   asqSocket.onGoto(onAsqSocketGoto);
 
+  // add a slide when receiving the add slide event
+  asqSocket.onAddSlide(onAsqSocketAddSlide);
+
   // `patchImpress` patches the impress.js api so that external scripts
   // that use goto, next and prev go through the adapter.
   function patchImpress(){
     if(impressPatched) return;
-    
+
     if(typeof window.impress !== 'function'){
       document.addEventListener("impress:ready", patchImpress);
       return;
@@ -136,7 +139,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
     activeStep = data.step || activeStep;
     allSubsteps[activeStep].active = (!isNaN(data.substepIdx))
-      ? data.substepIdx 
+      ? data.substepIdx
       : -1;
 
     var times = offset
@@ -144,7 +147,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       var nextState = getNext();
       activeStep = nextState.step || activeStep;
       allSubsteps[activeStep].active = (!isNaN(nextState.substepIdx))
-        ? nextState.substepIdx 
+        ? nextState.substepIdx
         : -1;
     }
 
@@ -158,6 +161,39 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     document.dispatchEvent(event);
   };
 
+  function onAsqSocketAddSlide(data) {
+      addSlide(data);
+    }
+
+  function addSlide(data) {
+    if (!document.getElementById(data.id)) {
+      var dom = {};
+      dom.slides = document.querySelector('#impress > div');
+      var newSlide = document.createElement('section');
+
+      if (data.index == dom.slides.children.length) {
+        // add slide at the end of the presentation
+        dom.slides.appendChild(newSlide);
+      }
+      else {
+        // add slide at a given index
+        dom.slides.insertBefore(newSlide,dom.slides.querySelector('section:nth-child('+(data.index+1)+')'));
+      }
+      newSlide.innerHTML = data.content;
+      newSlide.id = data.id;
+      newSlide.className = "step future";
+    }
+    newSlide.dataset.x = 21000;
+    newSlide.dataset.y = 0;
+    newSlide.dataset.z = 1000;
+    newStep(newSlide);
+    steps.push(newSlide.id);
+    var elSubs = allSubsteps[data.id] = Object.create(null);
+    elSubs.substeps = [];
+    elSubs.active = -1;
+  }
+
+
 
   function getSubSteps(el) {
     var steps = el.querySelectorAll(".substep"),
@@ -165,7 +201,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     Array.prototype.forEach.call(steps, function (el) {
       if (el.dataset) {
         var index = Number(el.dataset.order);
-        
+
         if (!isNaN(index)) {
           if (!order[index]) {
               order[index] = el;
@@ -176,7 +212,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
           }
         } else {
           unordered.push(el);
-        } 
+        }
       } else {
          unordered.push(el);
       }
@@ -186,7 +222,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   // `getStep` is a helper function that returns a step element defined by parameter.
   // Contrary to the actual impress.js implementation this one returns and id
-  // If a number is given, if of step with index given by the number is returned, 
+  // If a number is given, if of step with index given by the number is returned,
   // if a string is given string is returned if it's a valid id
   //, if DOM element is given its id is returned
   function getStep( step ) {
@@ -204,10 +240,10 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
   // moves to substep given with subIdx (by index),
   // with a transition `duration` optionally given as second parameter.
   function goto ( id, subIdx, duration ) {
-    
+
     //check if we have nothing
-    if(id === null 
-        || id === undefined 
+    if(id === null
+        || id === undefined
         || 'string'!== typeof (id = getStep(id))){
       if((subIdx === null || subIdx === undefined || isNaN(subIdx))){
           return null;
@@ -222,7 +258,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     //these two should be valid
     activeStep = id || activeStep;
     allSubsteps[activeStep].active = (!isNaN(subIdx))
-      ? subIdx 
+      ? subIdx
       : -1;
 
     debug("goto #"+ activeStep + ":" + allSubsteps[activeStep].active);
@@ -232,13 +268,13 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function prev() {
     var subactive, substeps;
-    
+
     substeps = allSubsteps[activeStep].substeps || [];
 
     //if we have substeps deal with them first
     if (substeps.length && ((subactive = allSubsteps[activeStep].active) || (subactive === 0))) {
       if (subactive >=0) {
-        --subactive; 
+        --subactive;
         return goto(null, subactive)
       }
     }
@@ -253,7 +289,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function next () {
     var subactive, substeps;
-    
+
     substeps = allSubsteps[activeStep].substeps || [];
 
     // if we have substeps deal with them first
@@ -273,7 +309,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function getNext(){
     var subactive, substeps;
-    
+
     substeps = allSubsteps[activeStep].substeps || [];
 
     // if we have substeps deal with them first
@@ -305,7 +341,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function onHashChange() {
     // When the step is entered hash in the location is updated
-    // (just few lines above from here), so the hash change is 
+    // (just few lines above from here), so the hash change is
     // triggered and we would call `goto` again on the same element.
     //
     // To avoid this we store last entered hash and compare.
@@ -353,7 +389,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     while ( (target.tagName !== "A") &&
       (target !== document.documentElement) ) {
       target = target.parentNode;
-    } 
+    }
 
     if ( target.tagName === "A" ) {
       var href = target.getAttribute("href");
@@ -386,7 +422,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     if(root){
       root.removeEventListener("impress:stepenter", onStepEnter);
     }
-    
+
     window.removeEventListener("hashchange", onHashChange);
 
     if(standalone){
@@ -402,7 +438,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
   if(root){
     root.addEventListener("impress:stepenter", onStepEnter, false);
   }
-  
+
   window.addEventListener("hashchange", onHashChange, false);
 
 
