@@ -90,6 +90,9 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
   // add a slide when receiving the add slide event
   asqSocket.onAddSlide(onAsqSocketAddSlide);
 
+  // remove a dynamically added slide when receiving the remove slide event
+  asqSocket.onRemoveSlide(onAsqSocketRemoveSlide);
+
   // `patchImpress` patches the impress.js api so that external scripts
   // that use goto, next and prev go through the adapter.
   function patchImpress(){
@@ -163,7 +166,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function onAsqSocketAddSlide(data) {
       addSlide(data);
-    }
+  }
 
   function addSlide(data) {
     if (!document.getElementById(data.id)) {
@@ -191,6 +194,15 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     var elSubs = allSubsteps[data.id] = Object.create(null);
     elSubs.substeps = [];
     elSubs.active = -1;
+  }
+
+  function onAsqSocketRemoveSlide(data) {
+    if (document.getElementById(data.id)) {
+      prev();
+      var toRemove = document.getElementById(data.id);
+      toRemove.parentNode.removeChild(toRemove);
+      steps.splice(steps.indexOf(data.id), 1)
+    }
   }
 
   function getAvailableY() {
