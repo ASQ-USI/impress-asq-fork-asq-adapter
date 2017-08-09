@@ -170,6 +170,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       var dom = {};
       dom.slides = document.querySelector('#impress > div');
       var newSlide = document.createElement('section');
+      var prevSlide = document.querySelector('section.present');
 
       if (data.index == dom.slides.children.length) {
         // add slide at the end of the presentation
@@ -183,8 +184,8 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       newSlide.id = data.id;
       newSlide.className = "step future";
     }
-    newSlide.dataset.x = 21000;
-    newSlide.dataset.y = 0;
+    newSlide.dataset.x = prevSlide.dataset.x;
+    newSlide.dataset.y = getAvailableY();
     newSlide.dataset.z = 1000;
     newStep(newSlide, data.index);
     steps.splice(data.index, 0, newSlide.id);
@@ -193,7 +194,18 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     elSubs.active = -1;
   }
 
+  function getAvailableY() {
+    var y = 1500;
+    var ys = [];
+    document.querySelectorAll('.step').forEach(function(slide) {
+      if (ys.indexOf(slide.dataset.y) == -1) ys.push(slide.dataset.y);
+    });
 
+    while (ys.includes(y)) {
+      y += 1500;
+    }
+    return y;
+  }
 
   function getSubSteps(el) {
     var steps = el.querySelectorAll(".substep"),
