@@ -166,9 +166,9 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
 
   function onAsqSocketAddSlide(data) {
       addSlide(data);
-  }
+    }
 
-  function addSlide(data) {
+    function addSlide(data) {
     if (!document.getElementById(data.id)) {
       var dom = {};
       dom.slides = document.querySelector('#impress > div');
@@ -184,7 +184,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       }
       newSlide.innerHTML = data.content;
       newSlide.id = data.id;
-      newSlide.className = "step future";
+      newSlide.className = 'step future';
     }
     newSlide.dataset.x = data.prevX;
     newSlide.dataset.y = getAvailableY();
@@ -194,6 +194,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
     var elSubs = allSubsteps[data.id] = Object.create(null);
     elSubs.substeps = [];
     elSubs.active = -1;
+    if (!data.getSlides || data.id == getElementFromHash()) goto(data.id);
   }
 
   function onAsqSocketRemoveSlide(data) {
