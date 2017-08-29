@@ -168,34 +168,34 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       addSlide(data);
     }
 
-    function addSlide(data) {
-    if (!document.getElementById(data.id)) {
-      var dom = {};
-      dom.slides = document.querySelector('#impress > div');
-      var newSlide = document.createElement('section');
+  function addSlide(data) {
+	    if (!document.getElementById(data.id)) {
+	      var dom = {};
+	      dom.slides = (data.printing)? document.querySelector('#impress') : document.querySelector('#impress > div');
+	      var newSlide = document.createElement('section');
 
-      if (data.index == dom.slides.children.length) {
-        // add slide at the end of the presentation
-        dom.slides.appendChild(newSlide);
-      }
-      else {
-        // add slide at a given index
-        dom.slides.insertBefore(newSlide,dom.slides.querySelector('section:nth-child('+(data.index+1)+')'));
-      }
-      newSlide.innerHTML = data.content;
-      newSlide.id = data.id;
-      newSlide.className = 'step future';
-    }
-    newSlide.dataset.x = data.prevX;
-    newSlide.dataset.y = getAvailableY();
-    newSlide.dataset.z = 1000;
-    newStep(newSlide, data.index);
-    steps.splice(data.index, 0, newSlide.id);
-    var elSubs = allSubsteps[data.id] = Object.create(null);
-    elSubs.substeps = [];
-    elSubs.active = -1;
-    if (!data.getSlides || data.id == getElementFromHash()) goto(data.id);
-  }
+	      if (data.index == dom.slides.children.length) {
+	        // add slide at the end of the presentation
+	        dom.slides.appendChild(newSlide);
+	      }
+	      else {
+	        // add slide at a given index
+	        dom.slides.insertBefore(newSlide,dom.slides.querySelector('section:nth-child('+(data.index+1)+')'));
+	      }
+	      newSlide.innerHTML = data.content;
+	      newSlide.id = data.id;
+	      newSlide.className = 'step';
+	    }
+	    newSlide.dataset.x = data.prevX;
+	    newSlide.dataset.y = getAvailableY();
+	    newSlide.dataset.z = 1000;
+	    if (!data.printing) newStep(newSlide, data.index);
+	    steps.splice(data.index, 0, newSlide.id);
+	    var elSubs = allSubsteps[data.id] = Object.create(null);
+	    elSubs.substeps = [];
+	    elSubs.active = -1;
+			if (!data.printing && (!data.getSlides || data.id == getElementFromHash())) goto(data.id);
+	  }
 
   function onAsqSocketRemoveSlide(data) {
     if (document.getElementById(data.id)) {
@@ -213,7 +213,7 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       if (ys.indexOf(slide.dataset.y) == -1) ys.push(slide.dataset.y);
     });
 
-    while (ys.includes(y)) {
+    while (ys.includes('' + y)) {
       y += 1500;
     }
     return y;
