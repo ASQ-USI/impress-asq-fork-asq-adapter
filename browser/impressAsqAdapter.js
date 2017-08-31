@@ -168,38 +168,46 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       addSlide(data);
     }
 
+  // add a slide with the given data, example data: { id: 'asq', index: 5, content: '<h1>Welcome</h1>' }
   function addSlide(data) {
-	    if (!document.getElementById(data.id)) {
-	      var dom = {};
-	      dom.slides = (data.printing)? document.querySelector('#impress') : document.querySelector('#impress > div');
+	    if (!document.getElementById(data.id)) { // slide is not already added
+
+        // dom structure is different while printing, since impress is not started
+	      var slides = (data.printing)? document.querySelector('#impress') : document.querySelector('#impress > div');
+
 	      var newSlide = document.createElement('section');
 
-	      if (data.index == dom.slides.children.length) {
-	        // add slide at the end of the presentation
-	        dom.slides.appendChild(newSlide);
-	      }
-	      else {
-	        // add slide at a given index
-	        dom.slides.insertBefore(newSlide,dom.slides.querySelector('section:nth-child('+(data.index+1)+')'));
-	      }
+        // add slide to dom at the end of the presentation
+	      if (data.index == slides.children.length) slides.appendChild(newSlide);
+
+        // add slide to dom at a given index
+	      else slides.insertBefore(newSlide, slides.querySelector('section:nth-child('+(data.index+1)+')'));
+
+        // set the slide attributes and content
 	      newSlide.innerHTML = data.content;
 	      newSlide.id = data.id;
 	      newSlide.className = 'step';
+        newSlide.dataset.x = data.prevX;
+  	    newSlide.dataset.y = getAvailableY();
+  	    newSlide.dataset.z = 1000;
+
+        // add the slide to the impress API
+  	    if (!data.printing) newStep(newSlide, data.index);
+  	    steps.splice(data.index, 0, newSlide.id);
+  	    var elSubs = allSubsteps[data.id] = Object.create(null);
+  	    elSubs.substeps = [];
+  	    elSubs.active = -1;
+
+        // go to the newly added slide
+  			if (!data.printing && (!data.getSlides || data.id == getElementFromHash())) goto(data.id);
 	    }
-	    newSlide.dataset.x = data.prevX;
-	    newSlide.dataset.y = getAvailableY();
-	    newSlide.dataset.z = 1000;
-	    if (!data.printing) newStep(newSlide, data.index);
-	    steps.splice(data.index, 0, newSlide.id);
-	    var elSubs = allSubsteps[data.id] = Object.create(null);
-	    elSubs.substeps = [];
-	    elSubs.active = -1;
-			if (!data.printing && (!data.getSlides || data.id == getElementFromHash())) goto(data.id);
 	  }
 
   function onAsqSocketRemoveSlide(data) {
     if (document.getElementById(data.id)) {
       prev();
+
+      // remove the slide from the dom
       var toRemove = document.getElementById(data.id);
       toRemove.parentNode.removeChild(toRemove);
       steps.splice(steps.indexOf(data.id), 1)
@@ -213,9 +221,9 @@ var asqImpressAdapter = module.exports = function(asqSocket, slidesTree, standal
       if (ys.indexOf(slide.dataset.y) == -1) ys.push(slide.dataset.y);
     });
 
-    while (ys.includes('' + y)) {
-      y += 1500;
-    }
+    // enhance y until a free y has been found
+    while (ys.includes('' + y)) y += 1500;
+
     return y;
   }
 
